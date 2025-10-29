@@ -19,7 +19,7 @@
       "label": "AWS Region",
       "type": "select",
       "options": ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"],
-      "default": "us-east-1",
+      "default": "us-west-1",
       "required": true,
       "description": "AWS region for deployment",
       "category": "infrastructure"
@@ -31,6 +31,24 @@
       "default": "",
       "required": true,
       "description": "AWS account ID for resource deployment",
+      "category": "infrastructure"
+    },
+    {
+      "key": "awsAdminId",
+      "label": "AWS Admin Access Key ID",
+      "type": "text",
+      "default": "",
+      "required": true,
+      "description": "AWS admin IAM user access key ID for GitHub Actions",
+      "category": "infrastructure"
+    },
+    {
+      "key": "awsAdminSecret",
+      "label": "AWS Admin Secret Access Key",
+      "type": "password",
+      "default": "",
+      "required": true,
+      "description": "AWS admin IAM user secret access key for GitHub Actions",
       "category": "infrastructure"
     },
     {
