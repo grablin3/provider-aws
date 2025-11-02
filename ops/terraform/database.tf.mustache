@@ -12,7 +12,7 @@ resource "aws_db_subnet_group" "database" {
 
 {{#isPostgreSQL}}
 resource "aws_db_parameter_group" "database" {
-  family = "postgres16"
+  family = "postgres17"
   name   = "${local.project_name}-${var.environment}-db-params"
 
   parameter {
