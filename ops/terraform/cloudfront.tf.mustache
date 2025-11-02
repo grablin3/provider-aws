@@ -20,7 +20,7 @@ resource "aws_cloudfront_distribution" "client" {
 
   # Set up aliases - include domains if certificate is available
   aliases = compact([
-    var.domain_name != "" ? var.domain_name : null,
+    var.domain_name != "" && var.certificate_arn != "" ? var.domain_name : null,
     var.certificate_arn != "" ? local.ui_domain : null
   ])
 

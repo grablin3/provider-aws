@@ -98,7 +98,7 @@ resource "random_password" "db_password" {
 resource "aws_db_instance" "database" {
   identifier = "${local.project_name}-${var.environment}-db"
   engine         = "postgres"
-  engine_version = "16.4"
+  engine_version = "17"
   instance_class = var.database_instance_class
   db_name  = "${replace(local.project_name, "-", "")}db"
   username = "${replace(local.project_name, "-", "")}admin"

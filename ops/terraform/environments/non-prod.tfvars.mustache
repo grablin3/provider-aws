@@ -8,7 +8,8 @@ environment = "{{environment}}"
 # Domain Configuration
 domain_base = "{{domain}}"
 app_id = "{{projectName}}"
-domain_name = "{{projectName}}-{{environment}}.{{domain}}"
+# domain_name starts empty - will be set by SSL cert workflow after certificate is created
+domain_name = ""
 
 # EC2 Configuration
 instance_type = "t2.micro"
