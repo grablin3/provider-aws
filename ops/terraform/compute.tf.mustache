@@ -1,3 +1,4 @@
+{{#hasBackend}}
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -237,4 +238,4 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   tags = merge(local.common_tags, {
     Name = "${local.project_name}-${var.environment}-cpu-low-alarm"
   })
-}
+}{{/hasBackend}}

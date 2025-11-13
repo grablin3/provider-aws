@@ -1,3 +1,4 @@
+{{#hasBackend}}
 resource "aws_lb" "server" {
   name               = "${local.project_name}-${var.environment}-alb"
   internal           = false
@@ -211,4 +212,4 @@ resource "aws_lb_listener" "server_http_only" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.server.arn
   }
-}
+}{{/hasBackend}}

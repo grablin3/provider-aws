@@ -1,3 +1,4 @@
+{{#hasBackend}}
 resource "aws_security_group" "alb" {
   name_prefix = "${local.project_name}-${var.environment}-alb-"
   vpc_id      = aws_vpc.main.id
@@ -33,7 +34,9 @@ resource "aws_security_group" "alb" {
     create_before_destroy = true
   }
 }
+{{/hasBackend}}
 
+{{#hasBackend}}
 resource "aws_security_group" "ec2" {
   name_prefix = "${local.project_name}-${var.environment}-ec2-"
   vpc_id      = aws_vpc.main.id
@@ -69,7 +72,9 @@ resource "aws_security_group" "ec2" {
     create_before_destroy = true
   }
 }
+{{/hasBackend}}
 
+{{#hasDatabase}}
 resource "aws_security_group" "rds" {
   name_prefix = "${local.project_name}-${var.environment}-rds-"
   vpc_id      = aws_vpc.main.id
@@ -97,7 +102,9 @@ resource "aws_security_group" "rds" {
     create_before_destroy = true
   }
 }
+{{/hasDatabase}}
 
+{{#hasBackend}}
 # Fetch SSH public key from S3 using external data source (more reliable than aws_s3_object)
 data "external" "ssh_public_key" {
   program = ["sh", "-c", "aws s3 cp s3://${local.project_name}-terraform-state/ssh/${var.environment}_key.pub - | jq -Rs '{key: .}'"]
@@ -123,6 +130,7 @@ resource "aws_key_pair" "server" {
     }
   }
 }
+{{/hasBackend}}
 
 # Application secrets for additional configuration
 resource "aws_secretsmanager_secret" "app_secrets" {
