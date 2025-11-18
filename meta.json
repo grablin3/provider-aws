@@ -2,9 +2,9 @@
   "version": "3.0.0",
 
   "metadata": {
-    "id": "extension-aws",
+    "id": "provider-aws",
     "name": "AWS Infrastructure",
-    "kind": "extension",
+    "kind": "provider",
     "layers": ["ops", "cicd"],
     "type": "aws",
     "description": "Complete AWS infrastructure setup with Terraform, EC2 deployment, and multi-environment support",
