@@ -84,16 +84,7 @@
     },
     "layers": {
       "ops": {},
-      "cicd": {
-        "conditionalFiles": {
-          "ifBackendLayerPresent": {
-            "condition": "hasLayer('backend')",
-            "files": [
-              "cicd/.github/workflows/Code-320-server-ec2-pwd.yml.mustache"
-            ]
-          }
-        }
-      }
+      "cicd": {}
     },
     "postProcess": [
       {
