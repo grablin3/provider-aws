@@ -1,6 +1,7 @@
 # Client assets bucket (for CloudFront distribution)
+# Bucket names include AWS account ID for global uniqueness
 resource "aws_s3_bucket" "client" {
-  bucket = "${local.project_name}-${var.environment}-client-assets"
+  bucket = "${local.project_name}-${var.environment}-client-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(local.common_tags, {
     Name        = "${local.project_name}-${var.environment}-client"
@@ -11,7 +12,7 @@ resource "aws_s3_bucket" "client" {
 {{#hasBackend}}
 # API bucket (for API-related files, uploads, data storage)
 resource "aws_s3_bucket" "api" {
-  bucket = "${local.project_name}-${var.environment}-api"
+  bucket = "${local.project_name}-${var.environment}-api-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(local.common_tags, {
     Name        = "${local.project_name}-${var.environment}-api"
@@ -23,7 +24,7 @@ resource "aws_s3_bucket" "api" {
 
 # Operations bucket (consolidates deployment artifacts, JAR files, scripts)
 resource "aws_s3_bucket" "ops" {
-  bucket = "${local.project_name}-${var.environment}-ops"
+  bucket = "${local.project_name}-${var.environment}-ops-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(local.common_tags, {
     Name        = "${local.project_name}-${var.environment}-ops"

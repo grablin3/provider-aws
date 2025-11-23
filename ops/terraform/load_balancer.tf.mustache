@@ -20,7 +20,7 @@ resource "aws_lb" "server" {
 }
 
 resource "aws_s3_bucket" "alb_logs" {
-  bucket = "${local.project_name}-${var.environment}-alb-logs"
+  bucket = "${local.project_name}-${var.environment}-alb-logs-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(local.common_tags, {
     Name = "${local.project_name}-${var.environment}-alb-logs"

@@ -20,6 +20,10 @@ echo "=== JAR: $JAR_NAME ==="
 export AWS_DEFAULT_REGION="{{region}}"
 echo "=== AWS Region: $AWS_DEFAULT_REGION ==="
 
+# Get AWS Account ID for bucket names (all buckets include account ID for global uniqueness)
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "=== AWS Account ID: $AWS_ACCOUNT_ID ==="
+
 # 1. Set timezone
 echo "=== Setting timezone ==="
 sudo timedatectl set-timezone US/Central
@@ -108,14 +112,14 @@ else
     ENV_FOR_S3="production"
 fi
 
-echo "Source: s3://{{projectName}}-${ENV_FOR_S3}-ops/ec2-setup/"
+echo "Source: s3://{{projectName}}-${ENV_FOR_S3}-ops-${AWS_ACCOUNT_ID}/ec2-setup/"
 echo "Target: /opt/{{backendModule.name}}/ec2-setup/"
 
 # Create target directory if it doesn't exist
 sudo mkdir -p /opt/{{backendModule.name}}/ec2-setup
 
 # Sync all files from S3 ec2-setup directory
-if sudo aws s3 sync s3://{{projectName}}-${ENV_FOR_S3}-ops/ec2-setup/ /opt/{{backendModule.name}}/ec2-setup/; then
+if sudo aws s3 sync s3://{{projectName}}-${ENV_FOR_S3}-ops-${AWS_ACCOUNT_ID}/ec2-setup/ /opt/{{backendModule.name}}/ec2-setup/; then
     echo "✅ Successfully synced EC2 setup scripts from S3"
     
     # Make all shell scripts executable
@@ -284,7 +288,7 @@ fi
 
 # 10. Download new JAR from S3
 echo "=== Downloading new JAR file ==="
-if sudo aws s3 cp "s3://{{projectName}}-${ENV_FOR_S3}-ops/jars/$JAR_NAME" /opt/{{backendModule.name}}/lib/app.jar; then
+if sudo aws s3 cp "s3://{{projectName}}-${ENV_FOR_S3}-ops-${AWS_ACCOUNT_ID}/jars/$JAR_NAME" /opt/{{backendModule.name}}/lib/app.jar; then
     echo "✅ Successfully downloaded $JAR_NAME from S3"
     sudo chown {{backendModule.name}}:{{backendModule.name}} /opt/{{backendModule.name}}/lib/app.jar
     sudo chmod 644 /opt/{{backendModule.name}}/lib/app.jar
