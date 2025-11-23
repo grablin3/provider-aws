@@ -18,22 +18,35 @@ echo "ENVIRONMENT: $ENVIRONMENT"
 echo "AWS_REGION: $AWS_REGION"
 echo "PROJECT: $PROJECT_NAME"
 
-# Basic system setup
+# Basic system setup - detect OS and use appropriate package manager
 echo "=== Installing basic system packages ==="
-yum update -y
-yum install -y awscli jq wget curl unzip
-
-
+if grep -q "Amazon Linux 2023" /etc/os-release 2>/dev/null; then
+    echo "Detected Amazon Linux 2023"
+    dnf update -y
+    dnf install -y awscli jq wget curl unzip
+else
+    echo "Detected Amazon Linux 2 or other"
+    yum update -y
+    yum install -y awscli jq wget curl unzip
+fi
 
 # Install SSM Agent (for GitHub Actions communication)
 echo "=== Installing SSM Agent ==="
-yum install -y amazon-ssm-agent
+if grep -q "Amazon Linux 2023" /etc/os-release 2>/dev/null; then
+    dnf install -y amazon-ssm-agent
+else
+    yum install -y amazon-ssm-agent
+fi
 systemctl enable amazon-ssm-agent
 systemctl start amazon-ssm-agent
 
 # Install CloudWatch agent for monitoring
 echo "=== Installing CloudWatch Agent ==="
-yum install -y amazon-cloudwatch-agent
+if grep -q "Amazon Linux 2023" /etc/os-release 2>/dev/null; then
+    dnf install -y amazon-cloudwatch-agent
+else
+    yum install -y amazon-cloudwatch-agent
+fi
 
 # Configure basic CloudWatch agent for system monitoring
 echo "=== Configuring CloudWatch Agent ==="
