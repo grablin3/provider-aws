@@ -110,21 +110,23 @@
     }
   },
 
-  "gitignore": [
-    "# Terraform",
-    ".terraform/",
-    "*.tfstate",
-    "*.tfstate.*",
-    ".terraform.lock.hcl",
-    "*.tfvars",
-    "!**/terraform/environments/*.tfvars",
-    "",
-    "# AWS",
-    "*.pem",
-    "*.key",
-    "",
-    "# SSH Keys",
-    "ssh-keys/*",
-    "!ssh-keys/.gitkeep"
-  ]
+  "gitIgnore": {
+    "ops": [
+      "# Terraform",
+      ".terraform/",
+      "*.tfstate",
+      "*.tfstate.*",
+      ".terraform.lock.hcl",
+      "*.tfvars",
+      "!**/terraform/environments/*.tfvars",
+      "",
+      "# AWS",
+      "*.pem",
+      "*.key",
+      "",
+      "# SSH Keys",
+      "ssh-keys/*",
+      "!ssh-keys/.gitkeep"
+    ]
+  }
 }
