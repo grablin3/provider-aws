@@ -108,8 +108,8 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
         echo "   $line"
     done
 
-    # Count healthy vs unhealthy
-    HEALTHY_COUNT=$(echo "$HEALTH_OUTPUT" | grep -c "healthy" || echo "0")
+    # Count healthy vs unhealthy (use word boundary to avoid matching "unhealthy")
+    HEALTHY_COUNT=$(echo "$HEALTH_OUTPUT" | grep -cw "healthy" || echo "0")
     TOTAL_COUNT=$(echo "$HEALTH_OUTPUT" | wc -l | tr -d ' ')
 
     if [ "$HEALTHY_COUNT" -eq "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 0 ]; then
@@ -140,11 +140,11 @@ echo "════════════════════════�
 echo "Step 3: Enabling ELB health checks with reduced grace period"
 echo "═══════════════════════════════════════════════════════════════"
 
-echo "🔄 Updating ASG to use ELB health checks with 900s grace period..."
+echo "🔄 Updating ASG to use ELB health checks with 3600s (1hr) grace period..."
 aws autoscaling update-auto-scaling-group \
     --auto-scaling-group-name "$ASG_NAME" \
     --health-check-type "ELB" \
-    --health-check-grace-period 900 \
+    --health-check-grace-period 3600 \
     --region "$REGION"
 
 echo ""
