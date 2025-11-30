@@ -148,7 +148,7 @@ resource "aws_autoscaling_group" "server" {
   vpc_zone_identifier       = aws_subnet.private[*].id
   target_group_arns         = [aws_lb_target_group.server.arn]
   health_check_type         = "EC2"
-  health_check_grace_period = 2700
+  health_check_grace_period = 2592000
 
   min_size         = var.min_size
   max_size         = var.max_size

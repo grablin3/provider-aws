@@ -3,68 +3,150 @@ set -e
 
 PROJECT_NAME="{{projectName}}"
 ENVIRONMENT="${1:-production}"  # Default to production if not specified
+ASG_NAME="$PROJECT_NAME-$ENVIRONMENT-asg"
+TG_NAME="$PROJECT_NAME-$ENVIRONMENT-tg"
+REGION="{{region}}"
+MAX_RETRIES=30
+RETRY_INTERVAL=10
 
-echo "🔍 Enabling ELB health checks for Auto Scaling Group..."
+echo "🔍 Enabling ELB health checks for Auto Scaling Group: $ASG_NAME"
 
-# Wait for all instances to be healthy first
-echo "⏳ Waiting for all instances to be ready..."
-aws autoscaling describe-auto-scaling-groups \
-    --auto-scaling-group-names "$PROJECT_NAME-$ENVIRONMENT-asg" \
-    --region "{{region}}" \
-    --query 'AutoScalingGroups[0].Instances[?LifecycleState==`InService`].[InstanceId,HealthStatus]' \
-    --output table
+# Get target group ARN
+echo "📋 Finding target group..."
+TG_ARN=$(aws elbv2 describe-target-groups \
+    --names "$TG_NAME" \
+    --region "$REGION" \
+    --query 'TargetGroups[0].TargetGroupArn' \
+    --output text 2>/dev/null || echo "")
 
-# Check if application is responding on all instances
-echo "🔍 Checking application health on all instances..."
+if [ -z "$TG_ARN" ] || [ "$TG_ARN" == "None" ]; then
+    echo "❌ Target group $TG_NAME not found"
+    exit 1
+fi
+echo "   Target group ARN: $TG_ARN"
+
+# Get all InService instances
+echo "📋 Getting ASG instances..."
 INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
-    --auto-scaling-group-names "$PROJECT_NAME-$ENVIRONMENT-asg" \
-    --region "{{region}}" \
+    --auto-scaling-group-names "$ASG_NAME" \
+    --region "$REGION" \
     --query 'AutoScalingGroups[0].Instances[?LifecycleState==`InService`].InstanceId' \
     --output text)
 
+if [ -z "$INSTANCE_IDS" ]; then
+    echo "❌ No InService instances found in ASG"
+    exit 1
+fi
+echo "   Found instances: $INSTANCE_IDS"
+
+# Step 1: Verify localhost health on all instances via SSM
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "Step 1: Verifying application health via localhost on all instances"
+echo "═══════════════════════════════════════════════════════════════"
+
+ALL_LOCALHOST_HEALTHY=true
 for instance_id in $INSTANCE_IDS; do
-    echo "Checking instance $instance_id..."
-    
-    # Use SSM to check if the application is responding
+    echo "🔍 Checking localhost health on $instance_id..."
+
     command_id=$(aws ssm send-command \
         --instance-ids "$instance_id" \
         --document-name "AWS-RunShellScript" \
-        --parameters 'commands=["curl -f http://localhost:8080/api/v1/public/health && echo SUCCESS || echo FAILED"]' \
-        --region "{{region}}" \
+        --parameters 'commands=["curl -sf http://localhost:8080/api/v1/public/health && echo HEALTH_CHECK_SUCCESS || echo HEALTH_CHECK_FAILED"]' \
+        --region "$REGION" \
         --query 'Command.CommandId' \
         --output text)
-    
-    # Wait for command to complete
+
     sleep 5
-    
-    # Get result
+
     result=$(aws ssm get-command-invocation \
         --command-id "$command_id" \
         --instance-id "$instance_id" \
-        --region "{{region}}" \
+        --region "$REGION" \
         --query 'StandardOutputContent' \
-        --output text)
-    
-    if [[ "$result" == *"SUCCESS"* ]]; then
-        echo "✅ Instance $instance_id is healthy"
+        --output text 2>/dev/null || echo "FAILED")
+
+    if [[ "$result" == *"HEALTH_CHECK_SUCCESS"* ]]; then
+        echo "   ✅ Instance $instance_id: localhost health OK"
     else
-        echo "⚠️ Instance $instance_id health check: $result"
-        echo "   (This is informational only - ALB target group health is authoritative)"
+        echo "   ❌ Instance $instance_id: localhost health FAILED"
+        echo "      Response: $result"
+        ALL_LOCALHOST_HEALTHY=false
     fi
 done
 
-# All instances are healthy, now enable ELB health checks
-echo "🔄 Switching Auto Scaling Group to ELB health checks..."
-aws autoscaling update-auto-scaling-group \
-    --auto-scaling-group-name "$PROJECT_NAME-$ENVIRONMENT-asg" \
-    --health-check-type "ELB" \
-    --health-check-grace-period 300 \
-    --region "{{region}}"
+if [ "$ALL_LOCALHOST_HEALTHY" != "true" ]; then
+    echo ""
+    echo "❌ ABORT: Not all instances have healthy localhost endpoints"
+    echo "   Fix the application before enabling ELB health checks"
+    exit 1
+fi
 
+# Step 2: Wait for ALB target group to show all targets healthy
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "Step 2: Waiting for ALB target group health (max ${MAX_RETRIES} attempts)"
+echo "═══════════════════════════════════════════════════════════════"
+
+for ((i=1; i<=MAX_RETRIES; i++)); do
+    echo "🔍 Attempt $i/$MAX_RETRIES: Checking ALB target health..."
+
+    # Get health status for all targets
+    HEALTH_OUTPUT=$(aws elbv2 describe-target-health \
+        --target-group-arn "$TG_ARN" \
+        --region "$REGION" \
+        --query 'TargetHealthDescriptions[*].[Target.Id,TargetHealth.State,TargetHealth.Reason]' \
+        --output text)
+
+    echo "$HEALTH_OUTPUT" | while read -r line; do
+        echo "   $line"
+    done
+
+    # Count healthy vs unhealthy
+    HEALTHY_COUNT=$(echo "$HEALTH_OUTPUT" | grep -c "healthy" || echo "0")
+    TOTAL_COUNT=$(echo "$HEALTH_OUTPUT" | wc -l | tr -d ' ')
+
+    if [ "$HEALTHY_COUNT" -eq "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 0 ]; then
+        echo ""
+        echo "✅ All $TOTAL_COUNT targets are healthy in ALB target group!"
+        break
+    fi
+
+    if [ "$i" -eq "$MAX_RETRIES" ]; then
+        echo ""
+        echo "❌ ABORT: ALB target health check timed out after $MAX_RETRIES attempts"
+        echo "   Targets are not becoming healthy. Common causes:"
+        echo "   - ALLOWED_HOSTS missing EC2 private IP (Django returns 400)"
+        echo "   - Security group not allowing ALB to reach port 8080"
+        echo "   - Application not listening on port 8080"
+        echo ""
+        echo "   Debug: Check ALB access logs or run health check manually on instance"
+        exit 1
+    fi
+
+    echo "   ⏳ Waiting ${RETRY_INTERVAL}s before retry..."
+    sleep $RETRY_INTERVAL
+done
+
+# Step 3: All health checks passed - now safe to enable ELB health checks with reduced grace period
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "Step 3: Enabling ELB health checks with reduced grace period"
+echo "═══════════════════════════════════════════════════════════════"
+
+echo "🔄 Updating ASG to use ELB health checks with 900s grace period..."
+aws autoscaling update-auto-scaling-group \
+    --auto-scaling-group-name "$ASG_NAME" \
+    --health-check-type "ELB" \
+    --health-check-grace-period 900 \
+    --region "$REGION"
+
+echo ""
 echo "✅ ELB health checks enabled successfully!"
-echo "🔍 Current ASG status:"
+echo ""
+echo "📊 Final ASG status:"
 aws autoscaling describe-auto-scaling-groups \
-    --auto-scaling-group-names "$PROJECT_NAME-$ENVIRONMENT-asg" \
-    --region "{{region}}" \
+    --auto-scaling-group-names "$ASG_NAME" \
+    --region "$REGION" \
     --query 'AutoScalingGroups[0].{HealthCheckType:HealthCheckType,HealthCheckGracePeriod:HealthCheckGracePeriod,MinSize:MinSize,MaxSize:MaxSize,DesiredCapacity:DesiredCapacity}' \
     --output table
