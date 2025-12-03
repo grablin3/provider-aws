@@ -137,7 +137,8 @@ resource "aws_key_pair" "server" {
 }
 {{/hasBackend}}
 
-# Application secrets for additional configuration
+{{#hasBackend}}
+# Application secrets for additional configuration (only needed for backend)
 resource "aws_secretsmanager_secret" "app_secrets" {
   name                           = "${local.project_name}-${var.environment}-app-secrets"
   description                    = "Application secrets for ${local.project_name} ${var.environment}"
@@ -266,3 +267,4 @@ variable "runtime_secret_{{key}}" {
 }
 {{/runtimeSecrets}}
 {{/hasRuntimeSecrets}}
+{{/hasBackend}}

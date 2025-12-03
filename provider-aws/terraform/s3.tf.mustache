@@ -22,7 +22,9 @@ resource "aws_s3_bucket" "api" {
 }
 {{/hasBackend}}
 
+{{#hasBackend}}
 # Operations bucket (consolidates deployment artifacts, JAR files, scripts)
+# Only needed when there's a backend that needs to be deployed
 resource "aws_s3_bucket" "ops" {
   bucket = "${local.project_name}-${var.environment}-ops-${data.aws_caller_identity.current.account_id}"
 
@@ -32,6 +34,7 @@ resource "aws_s3_bucket" "ops" {
     Purpose     = "ops"
   })
 }
+{{/hasBackend}}
 
 # Versioning configurations
 resource "aws_s3_bucket_versioning" "client" {
@@ -50,12 +53,14 @@ resource "aws_s3_bucket_versioning" "api" {
 }
 {{/hasBackend}}
 
+{{#hasBackend}}
 resource "aws_s3_bucket_versioning" "ops" {
   bucket = aws_s3_bucket.ops.id
   versioning_configuration {
     status = "Enabled"
   }
 }
+{{/hasBackend}}
 
 # Server-side encryption configurations
 resource "aws_s3_bucket_server_side_encryption_configuration" "client" {
@@ -80,6 +85,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "api" {
 }
 {{/hasBackend}}
 
+{{#hasBackend}}
 resource "aws_s3_bucket_server_side_encryption_configuration" "ops" {
   bucket = aws_s3_bucket.ops.id
 
@@ -89,6 +95,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "ops" {
     }
   }
 }
+{{/hasBackend}}
 
 # Public access block configurations
 resource "aws_s3_bucket_public_access_block" "client" {
@@ -111,6 +118,7 @@ resource "aws_s3_bucket_public_access_block" "api" {
 }
 {{/hasBackend}}
 
+{{#hasBackend}}
 resource "aws_s3_bucket_public_access_block" "ops" {
   bucket = aws_s3_bucket.ops.id
 
@@ -119,6 +127,7 @@ resource "aws_s3_bucket_public_access_block" "ops" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+{{/hasBackend}}
 
 # CloudFront access policy for client bucket
 data "aws_iam_policy_document" "client_bucket_policy" {

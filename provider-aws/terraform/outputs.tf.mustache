@@ -117,10 +117,12 @@ output "api_bucket_name" {
 }
 {{/hasBackend}}
 
+{{#hasBackend}}
 output "ops_bucket_name" {
   description = "S3 bucket for operations, deployment artifacts, JAR files, and scripts"
   value       = aws_s3_bucket.ops.bucket
 }
+{{/hasBackend}}
 
 output "ui_domain" {
   description = "UI domain name for the application"
