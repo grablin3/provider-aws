@@ -38,6 +38,8 @@ resource "aws_subnet" "public" {
   })
 }
 
+{{#needsPrivateSubnets}}
+# Private subnets needed for NAT Gateway placement OR database (RDS requires private subnets)
 resource "aws_subnet" "private" {
   count = 2
 
@@ -50,6 +52,7 @@ resource "aws_subnet" "private" {
     Type = "private"
   })
 }
+{{/needsPrivateSubnets}}
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -71,6 +74,9 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+{{#useNatGateway}}
+# NAT Gateway resources - only created when useNatGateway=true
+# Adds ~$64/month per environment (~$32/month × 2 NAT Gateways)
 resource "aws_eip" "nat" {
   count = 2
 
@@ -94,7 +100,10 @@ resource "aws_nat_gateway" "main" {
 
   depends_on = [aws_internet_gateway.main]
 }
+{{/useNatGateway}}
 
+{{#useNatGateway}}
+# Private route tables WITH NAT Gateway - routes outbound traffic through NAT
 resource "aws_route_table" "private" {
   count = 2
 
@@ -116,4 +125,29 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
+{{/useNatGateway}}
+{{^useNatGateway}}
+{{#needsPrivateSubnets}}
+# Private route tables WITHOUT NAT Gateway (for database-only scenarios)
+# No outbound internet route - RDS doesn't need it, only internal VPC traffic
+resource "aws_route_table" "private" {
+  count = 2
+
+  vpc_id = aws_vpc.main.id
+
+  # No route to internet - only internal VPC traffic
+
+  tags = merge(local.common_tags, {
+    Name = "${local.project_name}-${var.environment}-private-rt-${count.index + 1}"
+  })
+}
+
+resource "aws_route_table_association" "private" {
+  count = length(aws_subnet.private)
+
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
+}
+{{/needsPrivateSubnets}}
+{{/useNatGateway}}
 {{/hasBackend}}

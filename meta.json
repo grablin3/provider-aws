@@ -75,6 +75,15 @@
       "required": false,
       "description": "RDS database instance class",
       "category": "infrastructure"
+    },
+    {
+      "key": "useNatGateway",
+      "label": "Use NAT Gateway",
+      "type": "boolean",
+      "default": false,
+      "required": false,
+      "description": "Enable NAT Gateway for EC2 private subnet placement. Adds ~$64/month per environment. Only needed for strict compliance (PCI-DSS, HIPAA) or fixed outbound IP requirements.",
+      "category": "infrastructure"
     }
   ],
 

@@ -145,7 +145,13 @@ resource "aws_launch_template" "server" {
 
 resource "aws_autoscaling_group" "server" {
   name                      = "${local.project_name}-${var.environment}-asg"
+  # EC2 placement: private subnets (behind NAT) when useNatGateway=true, otherwise public subnets
+  {{#useNatGateway}}
   vpc_zone_identifier       = aws_subnet.private[*].id
+  {{/useNatGateway}}
+  {{^useNatGateway}}
+  vpc_zone_identifier       = aws_subnet.public[*].id
+  {{/useNatGateway}}
   target_group_arns         = [aws_lb_target_group.server.arn]
   health_check_type         = "EC2"
   health_check_grace_period = 2592000
