@@ -12,13 +12,13 @@ app_id = "{{projectName}}"  # Application/Project ID for API and UI subdomains
 domain_name = ""
 
 # EC2 Configuration
-instance_type = "t2.micro"
+instance_type = "{{instanceType}}"
 min_size = 1
 max_size = 2
 desired_capacity = 1
 
 # Database Configuration
-database_instance_class = "db.t3.micro"
+database_instance_class = "{{databaseClass}}"
 database_allocated_storage = 20
 
 # Network Security
