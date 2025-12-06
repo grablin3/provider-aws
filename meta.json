@@ -61,9 +61,15 @@
       "label": "EC2 Instance Type",
       "type": "select",
       "options": ["t3.micro", "t3.small", "t3.medium", "t3.large"],
+      "optionNotes": {
+        "t3.micro": { "notes": "1 vCPU, 1GB RAM (~$8/month)" },
+        "t3.small": { "notes": "2 vCPU, 2GB RAM (~$15/month) - recommended for POC" },
+        "t3.medium": { "notes": "2 vCPU, 4GB RAM (~$30/month)" },
+        "t3.large": { "notes": "2 vCPU, 8GB RAM (~$60/month)" }
+      },
       "default": "t3.small",
       "required": true,
-      "description": "EC2 instance type for application servers. t3.small (2GB RAM) recommended for POC/dev workloads",
+      "description": "EC2 instance type for application servers",
       "category": "infrastructure"
     },
     {
@@ -71,6 +77,11 @@
       "label": "RDS Instance Class",
       "type": "select",
       "options": ["db.t3.micro", "db.t3.small", "db.t3.medium"],
+      "optionNotes": {
+        "db.t3.micro": { "notes": "2 vCPU, 1GB RAM (~$15/month) - free tier eligible" },
+        "db.t3.small": { "notes": "2 vCPU, 2GB RAM (~$30/month)" },
+        "db.t3.medium": { "notes": "2 vCPU, 4GB RAM (~$60/month)" }
+      },
       "default": "db.t3.micro",
       "required": false,
       "description": "RDS database instance class",
