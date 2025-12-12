@@ -1,3 +1,4 @@
+{{#hasFrontend}}
 # Client assets bucket (for CloudFront distribution)
 # Bucket names include AWS account ID for global uniqueness
 resource "aws_s3_bucket" "client" {
@@ -8,6 +9,7 @@ resource "aws_s3_bucket" "client" {
     Description = "Static assets for React client"
   })
 }
+{{/hasFrontend}}
 
 {{#hasBackend}}
 # API bucket (for API-related files, uploads, data storage)
@@ -37,12 +39,14 @@ resource "aws_s3_bucket" "ops" {
 {{/hasBackend}}
 
 # Versioning configurations
+{{#hasFrontend}}
 resource "aws_s3_bucket_versioning" "client" {
   bucket = aws_s3_bucket.client.id
   versioning_configuration {
     status = "Enabled"
   }
 }
+{{/hasFrontend}}
 
 {{#hasBackend}}
 resource "aws_s3_bucket_versioning" "api" {
@@ -63,6 +67,7 @@ resource "aws_s3_bucket_versioning" "ops" {
 {{/hasBackend}}
 
 # Server-side encryption configurations
+{{#hasFrontend}}
 resource "aws_s3_bucket_server_side_encryption_configuration" "client" {
   bucket = aws_s3_bucket.client.id
 
@@ -72,6 +77,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "client" {
     }
   }
 }
+{{/hasFrontend}}
 
 {{#hasBackend}}
 resource "aws_s3_bucket_server_side_encryption_configuration" "api" {
@@ -98,6 +104,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "ops" {
 {{/hasBackend}}
 
 # Public access block configurations
+{{#hasFrontend}}
 resource "aws_s3_bucket_public_access_block" "client" {
   bucket = aws_s3_bucket.client.id
 
@@ -106,6 +113,7 @@ resource "aws_s3_bucket_public_access_block" "client" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+{{/hasFrontend}}
 
 {{#hasBackend}}
 resource "aws_s3_bucket_public_access_block" "api" {
@@ -129,6 +137,7 @@ resource "aws_s3_bucket_public_access_block" "ops" {
 }
 {{/hasBackend}}
 
+{{#hasFrontend}}
 # CloudFront access policy for client bucket
 data "aws_iam_policy_document" "client_bucket_policy" {
   statement {
@@ -162,4 +171,4 @@ resource "aws_s3_bucket_policy" "client" {
 
   depends_on = [aws_s3_bucket_public_access_block.client]
 }
-
+{{/hasFrontend}}

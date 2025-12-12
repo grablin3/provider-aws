@@ -1,3 +1,4 @@
+{{#hasFrontend}}
 output "s3_bucket_name" {
   description = "Name of the S3 bucket for client assets"
   value       = aws_s3_bucket.client.bucket
@@ -12,6 +13,7 @@ output "cloudfront_domain_name" {
   description = "CloudFront distribution domain name"
   value       = aws_cloudfront_distribution.client.domain_name
 }
+{{/hasFrontend}}
 
 {{#hasBackend}}
 output "load_balancer_dns_name" {
@@ -124,10 +126,12 @@ output "ops_bucket_name" {
 }
 {{/hasBackend}}
 
+{{#hasFrontend}}
 output "ui_domain" {
   description = "UI domain name for the application"
   value       = local.ui_domain
 }
+{{/hasFrontend}}
 
 output "certificate_arn" {
   description = "ACM certificate ARN (if provided)"
