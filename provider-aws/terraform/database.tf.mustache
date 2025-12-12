@@ -129,8 +129,7 @@ resource "aws_db_instance" "database" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      password,
-      latest_restorable_time
+      password
     ]
   }
 }
@@ -171,8 +170,7 @@ resource "aws_db_instance" "database" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      password,
-      latest_restorable_time
+      password
     ]
   }
 }
@@ -213,8 +211,7 @@ resource "aws_db_instance" "database" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      password,
-      latest_restorable_time
+      password
     ]
   }
 }
@@ -253,8 +250,7 @@ resource "aws_db_instance" "database" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      password,
-      latest_restorable_time
+      password
     ]
   }
 }
@@ -295,8 +291,7 @@ resource "aws_db_instance" "database" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      password,
-      latest_restorable_time
+      password
     ]
   }
 }
